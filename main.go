@@ -9,28 +9,73 @@ import (
 	"strings"
 )
 
-var mem [100000]int
+const MAXN = 100000
+
+var mem [MAXN]int
+var jmp [MAXN]int
+var stack [MAXN]int
+var cmd [MAXN]string
 var pointer int = 0
 
-func run(data *bufio.Scanner) {
+func run(data *bufio.Scanner, printstr bool) {
+	ind := 0
+	stackp := 0
 	for data.Scan() {
 		c := data.Text()
-		if c == ">" {
+		cmd[ind] = c
+		if c == "[" {
+			stack[stackp] = ind
+			stackp++
+		}
+		if c == "]" {
+			stackp--
+			jmp[stack[stackp]] = ind
+			jmp[ind] = stack[stackp]
+		}
+		ind++
+	}
+	for i := 0; i < ind; i++ {
+		cur := cmd[i]
+		if cur == ">" {
 			pointer++
-		} else if c == "<" {
+		}
+		if cur == "<" {
 			pointer--
-		} else if c == "+" {
+		}
+		if cur == "+" {
 			mem[pointer]++
-		} else if c == "-" {
+		}
+		if cur == "-" {
 			mem[pointer]--
-		} else if c == "." {
-			fmt.Println(mem[pointer])
+		}
+		if cur == "." {
+			if printstr {
+				fmt.Print(string(mem[pointer]))
+			} else {
+				fmt.Print(mem[pointer])
+			}
+		}
+		if cur == "," {
+			var n int
+			fmt.Print("\ninput:")
+			_, err := fmt.Scanf("%d", &n)
+			if err != nil {
+				fmt.Println(err)
+			}
+			mem[pointer] = n
+		}
+		if cur == "[" && mem[pointer] == 0 {
+			i = jmp[i]
+		}
+		if cur == "]" && mem[pointer] != 0 {
+			i = jmp[i]
 		}
 	}
 }
 
 func main() {
 	filename := flag.String("fn", "", "filename to parse(required)")
+	pntstr := flag.Bool("ps", false, "whether or not the program outputs the string")
 	flag.Parse()
 	filebuffer, err := ioutil.ReadFile(*filename)
 	if err != nil {
@@ -40,5 +85,5 @@ func main() {
 	inputdata := string(filebuffer)
 	data := bufio.NewScanner(strings.NewReader(inputdata))
 	data.Split(bufio.ScanRunes)
-	run(data)
+	run(data, *pntstr)
 }
